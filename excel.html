@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload Excel</title>
+</head>
+<body>
+    <h2>Upload Excel File to MySQL</h2>
+    <form action="/upload" method="post" enctype="multipart/form-data">
+        <label>MySQL Host:</label><br>
+        <input type="text" name="host" required><br><br>
+
+        <label>Username:</label><br>
+        <input type="text" name="user" required><br><br>
+
+        <label>Password:</label><br>
+        <input type="password" name="password" required><br><br>
+
+        <label>Database:</label><br>
+        <input type="text" name="database" required><br><br>
+
+        <label>Table Name:</label><br>
+        <input type="text" name="table_name" required><br><br>
+
+        <label>Sheet Name:</label><br>
+        <input type="text" name="sheet_name" required><br><br>
+
+        <label>Select Excel File:</label><br>
+        <input type="file" name="file" accept=".xlsx" required><br><br>
+
+        <input type="submit" value="Upload">
+    </form>
+</body>
+</html>
