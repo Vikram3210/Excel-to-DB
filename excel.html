@@ -1,33 +1,110 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Upload Excel</title>
+    <meta charset="UTF-8">
+    <title>Upload Excel Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f2f2f2;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            max-width: 600px;
+            margin: auto;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            border-radius: 10px;
+        }
+        h2 {
+            text-align: center;
+        }
+        input[type=text], input[type=file], select {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0 20px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+        }
+        #popup-message {
+    padding: 15px 20px;
+    margin: 20px auto;
+    max-width: 600px;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 600;
+    display: none;
+    transition: all 0.3s ease-in-out;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+#popup-message.success {
+    background-color: #d1f7d6;
+    color: #2e7d32;
+    border: 1px solid #7ed38c;
+}
+
+#popup-message.error {
+    background-color: #fddede;
+    color: #b71c1c;
+    border: 1px solid #f5a1a1;
+}
+        a {
+            display: block;
+            margin-top: 15px;
+            text-align: center;
+            text-decoration: none;
+            color: #333;
+        }
+    </style>
 </head>
 <body>
-    <h2>Upload Excel File to MySQL</h2>
-    <form action="/upload" method="post" enctype="multipart/form-data">
-        <label>MySQL Host:</label><br>
-        <input type="text" name="host" required><br><br>
+    <div class="container">
+        <h2>Upload Excel File</h2>
 
-        <label>Username:</label><br>
-        <input type="text" name="user" required><br><br>
+        {% if message %}
+        <div id="popup-message" class="success">{{ message }}</div>
+    {% elif error %}
+        <div id="popup-message" class="error">{{ error }}</div>
+    {% endif %}
 
-        <label>Password:</label><br>
-        <input type="password" name="password" required><br><br>
+        <form action="/upload" method="post" enctype="multipart/form-data">
+            <label>Table Name:</label>
+            <input type="text" name="table_name" required>
 
-        <label>Database:</label><br>
-        <input type="text" name="database" required><br><br>
+            <label>Sheet Name:</label>
+            <input type="text" name="sheet_name" required>
 
-        <label>Table Name:</label><br>
-        <input type="text" name="table_name" required><br><br>
+            <label>Select Excel File:</label>
+            <input type="file" name="file" accept=".xlsx" required>
 
-        <label>Sheet Name:</label><br>
-        <input type="text" name="sheet_name" required><br><br>
+            <button type="submit">Upload</button>
+        </form>
 
-        <label>Select Excel File:</label><br>
-        <input type="file" name="file" accept=".xlsx" required><br><br>
-
-        <input type="submit" value="Upload">
-    </form>
+        <a href="/fetch_page">Go to Fetch Page</a>
+    </div>
+    <script>
+        window.onload = function () {
+            const msgBox = document.getElementById("popup-message");
+            if (msgBox) {
+                msgBox.style.display = "block"; // Ensure it's visible if rendered
+                setTimeout(() => {
+                    msgBox.style.display = "none";
+                }, 5000);
+            }
+        };
+    </script>
+    
 </body>
 </html>
