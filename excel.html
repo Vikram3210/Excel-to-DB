@@ -65,8 +65,12 @@
             margin-top: 15px;
             text-align: center;
             text-decoration: none;
-            color: #333;
+            color: #220af9;
         }
+
+    a:hover {
+      text-decoration: underline;
+    }
     </style>
 </head>
 <body>
@@ -83,28 +87,64 @@
             <label>Table Name:</label>
             <input type="text" name="table_name" required>
 
-            <label>Sheet Name:</label>
-            <input type="text" name="sheet_name" required>
+            <label for="sheetDropdown">Sheet Name:</label>
+            <select name="sheet_name" id="sheetDropdown" required>
+                <option value="">-- Select a sheet --</option>
+                <option value="all">All Sheets</option>
+            </select>
+            
 
             <label>Select Excel File:</label>
-            <input type="file" name="file" accept=".xlsx" required>
+            <input type="file" name="file" accept=".xls , .xlsx" required>
 
             <button type="submit">Upload</button>
         </form>
 
         <a href="/fetch_page">Go to Fetch Page</a>
+        <a href="/compare_page">Go to Compare Page</a>
     </div>
     <script>
         window.onload = function () {
             const msgBox = document.getElementById("popup-message");
             if (msgBox) {
-                msgBox.style.display = "block"; // Ensure it's visible if rendered
+                msgBox.style.display = "block";
                 setTimeout(() => {
                     msgBox.style.display = "none";
                 }, 5000);
             }
+
+            document.getElementById("excelFile").addEventListener("change", async function () {
+                const fileInput = this;
+                const sheetDropdown = document.getElementById("sheetDropdown");
+                sheetDropdown.innerHTML = '<option value="">-- Select a sheet --</option><option value="all">All Sheets</option>';
+
+                const formData = new FormData();
+                formData.append("file", fileInput.files[0]);
+
+                try {
+                    const res = await fetch("/get_sheet_names", {
+                        method: "POST",
+                        body: formData
+                    });
+
+                    const result = await res.json();
+
+                    if (res.ok && result.sheets) {
+                        result.sheets.forEach(sheet => {
+                            const opt = document.createElement("option");
+                            opt.value = sheet;
+                            opt.innerText = sheet;
+                            sheetDropdown.appendChild(opt);
+                        });
+                    } else {
+                        alert("Failed to load sheet names.");
+                    }
+                } catch (err) {
+                    console.error("Error loading sheet names:", err);
+                    alert("Error loading sheet names.");
+                }
+            });
         };
     </script>
-    
 </body>
 </html>

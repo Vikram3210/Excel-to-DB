@@ -1,143 +1,218 @@
+
+<!--
+<link rel="stylesheet" href="{{ url_for('static', filename='css/jquery.dataTables.min.css') }}">
+<script src="{{ url_for('static', filename='js/jquery-3.7.1.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/jquery.dataTables.min.js') }}"></script>
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <meta charset="UTF-8" />
     <title>Fetch Data</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            background: #f2f2f2;
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f0f2f5;
         }
-        .container {
-            background: white;
+
+        .page-wrapper {
+            display: flex;
+            height: 100vh;
+        }
+
+        .panel {
+            flex: 1;
             padding: 30px;
-            max-width: 600px;
-            margin: auto;
-            box-shadow: 0 0 10px rgba(0,0,0,0.2);
-            border-radius: 10px;
+            overflow-y: auto;
         }
+
+        .results-panel {
+            background-color: #ffffff;
+            border-right: 1px solid #ddd;
+        }
+
+        .form-panel {
+            background-color: #fafafa;
+        }
+
         h2 {
             text-align: center;
-        }
-        input[type=text], select {
-            width: 100%;
-            padding: 10px;
-            margin: 8px 0 20px 0;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            width: 100%;
-        }
-        #popup-message {
-            padding: 15px 20px;
-            margin: 20px auto;
-            max-width: 600px;
-            border-radius: 8px;
-            text-align: center;
-            font-size: 16px;
-            font-weight: 600;
-            display: none;
-            transition: all 0.3s ease-in-out;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        }
-        #popup-message.success {
-            background-color: #d1f7d6;
-            color: #2e7d32;
-            border: 1px solid #7ed38c;
-        }
-        #popup-message.error {
-            background-color: #fddede;
-            color: #b71c1c;
-            border: 1px solid #f5a1a1;
-        }
-        a {
-            display: block;
-            margin-top: 15px;
-            text-align: center;
-            text-decoration: none;
+            margin-bottom: 20px;
             color: #333;
         }
+
+        form {
+            max-width: 400px;
+            margin: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        select {
+            padding: 10px;
+            font-size: 15px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            margin-top: 5px;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 12px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+            button:hover {
+                background-color: #0056b3;
+            }
+
+        #popup-message {
+            margin: 20px auto;
+            padding: 10px;
+            text-align: center;
+            display: none;
+            max-width: 600px;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+            #popup-message.success {
+                background-color: #d4edda;
+                color: #155724;
+                border: 1px solid #c3e6cb;
+            }
+
+            #popup-message.error {
+                background-color: #f8d7da;
+                color: #721c24;
+                border: 1px solid #f5c6cb;
+            }
+
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
         }
+
         th, td {
-            padding: 8px 12px;
-            border: 1px solid #ccc;
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
         }
+
         th {
-            background-color: #f5f5f5;
+            background-color: #f9fafc;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f1f1f1;
+        }
+
+        a {
+            display: block;
+            text-align: center;
+            margin-top: 30px;
+            color: #007bff;
+            text-decoration: none;
+        }
+
+            a:hover {
+                text-decoration: underline;
+            }
+
+        div.dataTables_wrapper {
+            margin-top: 20px;
         }
     </style>
 </head>
+<!-- ... HEAD section remains the same ... -->
+
 <body>
-    <div class="container">
-        <h2>Fetch Data</h2>
+    <div class="page-wrapper">
+        <div class="panel form-panel">
+            <h2>Fetch Data</h2>
+            <form id="fetchForm">
+                <label for="tableDropdown">Select Table:</label>
+                <select name="table_name" id="tableDropdown" required>
+                    <option value="">-- Select a table --</option>
+                </select>
 
-        <div id="popup-message"></div>
+                <label for="columnDropdown">Select Column:</label>
+                <select name="column_name" id="columnDropdown" required>
+                    <option value="">-- Select a column --</option>
+                </select>
 
-        <form id="fetchForm">
-            <label>Select Table:</label>
-            <select name="table_name" id="tableDropdown" required>
-                <option value="">-- Select a table --</option>
-            </select>
+                <label for="search_value">Search Value:</label>
+                <input type="text" name="search_value" id="search_value" required>
 
-            <label>Enter Column Name:</label>
-            <input type="text" name="column_name" required>
+                <button type="submit">Fetch</button>
+            </form>
 
-            <label>Enter Value to Search:</label>
-            <input type="text" name="description" required>
+            <a href="/upload_page">Go to Upload Page</a>
+        </div>
 
-            <button type="submit">Fetch</button>
-        </form>
-
-        <div id="results"></div>
-
-        <a href="/upload_page">Go to Upload Page</a>
+        <div class="panel results-panel" id="resultsPanel" style="display: none;">
+            <h2>Results</h2>
+            <div id="popup-message"></div>
+            <div id="results"></div>
+        </div>
     </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
     <script>
         window.onload = async function () {
-            const dropdown = document.getElementById("tableDropdown");
-            const msgBox = document.getElementById("popup-message");
+            const tableDropdown = document.getElementById("tableDropdown");
+            const columnDropdown = document.getElementById("columnDropdown");
 
-            try {
-                const res = await fetch("/get_tables");
-                const result = await res.json();
+            const res = await fetch("/get_tables");
+            const result = await res.json();
 
-                if (res.ok && result.tables.length > 0) {
-                    result.tables.forEach(table => {
+            if (res.ok && result.tables?.length > 0) {
+                result.tables.forEach(table => {
+                    const option = document.createElement("option");
+                    option.value = table;
+                    option.innerText = table;
+                    tableDropdown.appendChild(option);
+                });
+            }
+
+            tableDropdown.addEventListener("change", async function () {
+                const selectedTable = this.value;
+                columnDropdown.innerHTML = '<option value="">-- Select a column --</option>';
+
+                if (!selectedTable) return;
+
+                const colRes = await fetch(`/get_columns?table_name=${selectedTable}`);
+                const colResult = await colRes.json();
+
+                if (colRes.ok && colResult.columns?.length > 0) {
+                    colResult.columns.forEach(col => {
                         const option = document.createElement("option");
-                        option.value = table;
-                        option.innerText = table;
-                        dropdown.appendChild(option);
+                        option.value = col;
+                        option.innerText = col;
+                        columnDropdown.appendChild(option);
                     });
-                } else {
-                    msgBox.innerText = "No tables found or error occurred.";
-                    msgBox.classList.add("error");
-                    msgBox.style.display = "block";
                 }
-            } catch (err) {
-                msgBox.innerText = "Failed to load table names.";
-                msgBox.classList.add("error");
-                msgBox.style.display = "block";
-                console.error("Dropdown load error:", err);
-            }
-
-            if (msgBox && msgBox.innerText !== "") {
-                setTimeout(() => {
-                    msgBox.style.display = "none";
-                }, 5000);
-            }
+            });
         };
 
         document.getElementById("fetchForm").onsubmit = async function (e) {
@@ -147,7 +222,7 @@
             const data = {
                 table_name: form.table_name.value,
                 column_name: form.column_name.value,
-                description: form.description.value
+                search_value: form.search_value.value
             };
 
             try {
@@ -159,62 +234,63 @@
 
                 const result = await res.json();
                 const resultsDiv = document.getElementById("results");
-                const msgBox = document.getElementById("popup-message");
 
-                msgBox.classList.remove("success", "error");
+                if (res.ok && result.data?.length > 0) {
+                    showMessage("Records found successfully!", "success");
 
-                if (res.ok) {
-                    if (result.data.length === 0) {
-                        msgBox.innerText = "No matching records found.";
-                        msgBox.classList.add("error");
-                        msgBox.style.display = "block";
-                        resultsDiv.innerHTML = "";
-                    } else {
-                        msgBox.innerText = "Records found successfully!";
-                        msgBox.classList.add("success");
-                        msgBox.style.display = "block";
+                    document.getElementById("resultsPanel").style.display = "block";
+                    document.querySelector(".page-wrapper").classList.add("split-layout");
 
-                        const table = document.createElement("table");
-                        const headerRow = document.createElement("tr");
-                        for (const key of Object.keys(result.data[0])) {
-                            const th = document.createElement("th");
-                            th.innerText = key;
-                            headerRow.appendChild(th);
-                        }
-                        table.appendChild(headerRow);
-
-                        for (const row of result.data) {
-                            const tr = document.createElement("tr");
-                            for (const value of Object.values(row)) {
-                                const td = document.createElement("td");
-                                td.innerText = value;
-                                tr.appendChild(td);
-                            }
-                            table.appendChild(tr);
-                        }
-                        resultsDiv.innerHTML = "";
-                        resultsDiv.appendChild(table);
+                    // Clean up any existing DataTable
+                    if ($.fn.DataTable.isDataTable('#resultTable')) {
+                        $('#resultTable').DataTable().destroy();
                     }
+
+                    // Build the table
+                    let tableHTML = '<table id="resultTable"><thead><tr>';
+                    Object.keys(result.data[0]).forEach(key => {
+                        tableHTML += `<th>${key}</th>`;
+                    });
+                    tableHTML += '</tr></thead><tbody>';
+                    result.data.forEach(row => {
+                        tableHTML += '<tr>';
+                        Object.values(row).forEach(value => {
+                            tableHTML += `<td>${value}</td>`;
+                        });
+                        tableHTML += '</tr>';
+                    });
+                    tableHTML += '</tbody></table>';
+
+                    resultsDiv.innerHTML = tableHTML;
+
+                    // Initialize DataTable
+                    $('#resultTable').DataTable({
+                        paging: true,
+                        pageLength: 10,
+                        searching: true,
+                        ordering: true,
+                        scrollX: true
+                    });
+
                 } else {
-                    msgBox.innerText = result.error || "An error occurred.";
-                    msgBox.classList.add("error");
-                    msgBox.style.display = "block";
+                    showMessage("No matching records found.", "error");
                     resultsDiv.innerHTML = "";
                 }
             } catch (err) {
-                const msgBox = document.getElementById("popup-message");
-                msgBox.classList.remove("success");
-                msgBox.classList.add("error");
-                msgBox.innerText = "Request failed.";
-                msgBox.style.display = "block";
+                showMessage("Request failed.", "error");
                 console.error("Fetch error:", err);
             }
-
-            setTimeout(() => {
-                const msgBox = document.getElementById("popup-message");
-                msgBox.style.display = "none";
-            }, 5000);
         };
+
+        function showMessage(message, type) {
+            const msgBox = document.getElementById("popup-message");
+            msgBox.className = "";
+            msgBox.classList.add(type);
+            msgBox.innerText = message;
+            msgBox.style.display = "block";
+            setTimeout(() => msgBox.style.display = "none", 5000);
+        }
     </script>
 </body>
 </html>
+

@@ -1,0 +1,446 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Compare Excel with DB</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f5f6fa;
+      margin: 0;
+      padding: 30px;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    form {
+      max-width: 500px;
+      margin: auto;
+      background-color: #fff;
+      padding: 25px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+
+    input[type="file"],
+    select,
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 20px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #007bff;
+      color: white;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    #popup-message {
+      text-align: center;
+      margin-top: 20px;
+      font-weight: bold;
+      display: none;
+      padding: 10px;
+      border-radius: 6px;
+    }
+
+    #popup-message.success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+
+    #popup-message.error {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+
+    #preview-container {
+      max-width: 90%;
+      margin: 30px auto;
+      display: none;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 15px;
+    }
+
+    table, th, td {
+      border: 1px solid #ccc;
+    }
+
+    th, td {
+      padding: 8px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f0f0f0;
+    }
+
+    #download-button {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Compare Excel with Database</h2>
+
+  <form id="compareForm" enctype="multipart/form-data">
+    <label for="excel_file">Upload Excel File:</label>
+    <input type="file" name="excel_file" id="excel_file" accept=".xls,.xlsx" required>
+
+    <label for="tableDropdown">Select Table to Compare With:</label>
+    <select id="tableDropdown" name="table_name" required>
+      <option value="">-- Select a table --</option>
+    </select>
+
+    <button type="submit">Compare</button>
+  </form>
+
+  <div id="popup-message"></div>
+
+  <div id="preview-container">
+    <h3>Preview of Matched Data</h3>
+    <div id="preview-table"></div>
+
+    <label for="filename">Enter filename for download:</label>
+    <input type="text" id="filename" placeholder="e.g., matched_data.xlsx">
+
+    <button id="download-button" onclick="downloadExcel()">Download Excel</button>
+  </div>
+
+  <script>
+    window.onload = async function () {
+      const tableDropdown = document.getElementById("tableDropdown");
+      const res = await fetch("/get_tables");
+      const result = await res.json();
+
+      if (res.ok && result.tables.length > 0) {
+        result.tables.forEach(table => {
+          const option = document.createElement("option");
+          option.value = table;
+          option.innerText = table;
+          tableDropdown.appendChild(option);
+        });
+      }
+    };
+
+    document.getElementById("compareForm").onsubmit = async function (e) {
+      e.preventDefault();
+
+      const formData = new FormData();
+      formData.append("excel_file", document.getElementById("excel_file").files[0]);
+      formData.append("table_name", document.getElementById("tableDropdown").value);
+
+      try {
+        const res = await fetch("/compare_excel", {
+          method: "POST",
+          body: formData
+        });
+
+        const msg = document.getElementById("popup-message");
+        const preview = document.getElementById("preview-container");
+        const previewTable = document.getElementById("preview-table");
+
+        if (res.ok) {
+          const result = await res.json();
+          msg.textContent = "Comparison completed successfully!";
+          msg.className = "success";
+          msg.style.display = "block";
+
+          // Show preview
+          previewTable.innerHTML = generateTableHTML(result.data);
+          preview.style.display = "block";
+        } else {
+          const result = await res.json();
+          msg.textContent = result.error || "Comparison failed.";
+          msg.className = "error";
+          msg.style.display = "block";
+          preview.style.display = "none";
+        }
+      } catch (err) {
+        const msg = document.getElementById("popup-message");
+        msg.textContent = "Request failed.";
+        msg.className = "error";
+        msg.style.display = "block";
+        console.error(err);
+      }
+    };
+
+    function generateTableHTML(data) {
+      if (!data || data.length === 0) return "<p>No data found.</p>";
+
+      const headers = Object.keys(data[0]);
+      let html = "<table><thead><tr>";
+
+      headers.forEach(h => {
+        html += `<th>${h}</th>`;
+      });
+      html += "</tr></thead><tbody>";
+
+      data.forEach(row => {
+        html += "<tr>";
+        headers.forEach(h => {
+          html += `<td>${row[h]}</td>`;
+        });
+        html += "</tr>";
+      });
+
+      html += "</tbody></table>";
+      return html;
+    }
+
+    function downloadExcel() {
+      const filename = document.getElementById("filename").value || "matched_output.xlsx";
+      const encodedFilename = encodeURIComponent(filename);
+      window.location.href = `/download_excel?filename=${encodedFilename}`;
+    }
+  </script>
+</body>
+</html> -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Compare Excel with DB</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f5f6fa;
+      margin: 0;
+      padding: 30px;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    form {
+      max-width: 500px;
+      margin: auto;
+      background-color: #fff;
+      padding: 25px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+
+    input[type="file"],
+    select {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 20px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #007bff;
+      color: white;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th, td {
+      padding: 12px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+
+    th {
+      background-color: #007bff;
+      color: white;
+    }
+
+    button.download-btn {
+      padding: 12px;
+      background-color: #28a745;
+      color: white;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    button.download-btn:hover {
+      background-color: #218838;
+    }
+
+    .status-message {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 16px;
+      color: red;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Compare Excel with Database</h2>
+
+<form id="compareForm" enctype="multipart/form-data">
+  <label for="excel_file">Upload Excel File:</label>
+  <input type="file" name="excel_file" id="excel_file" accept=".xls,.xlsx" required>
+
+  <label for="tableDropdown">Select Table to Compare With:</label>
+  <select id="tableDropdown" name="table_name" required>
+    <option value="">-- Select a table --</option>
+  </select>
+
+  <button type="submit">Compare</button>
+</form>
+
+<!-- Status message -->
+<div class="status-message" id="statusMessage"></div>
+
+<!-- Show merged data -->
+<div id="comparison-result" style="display: none;">
+  <h3>Comparison Results</h3>
+  <table id="resultTable">
+    <thead></thead>
+    <tbody></tbody>
+  </table>
+
+  <!-- Download button -->
+  <button class="download-btn" id="downloadBtn" style="display: none;" onclick="downloadFile()">Download Merged File</button>
+</div>
+<script>
+  let downloadedFilename = '';
+
+  window.onload = async function () {
+    const tableDropdown = document.getElementById("tableDropdown");
+    const res = await fetch("/get_tables");
+    const result = await res.json();
+
+    if (res.ok && result.tables.length > 0) {
+      result.tables.forEach(table => {
+        const option = document.createElement("option");
+        option.value = table;
+        option.innerText = table;
+        tableDropdown.appendChild(option);
+      });
+    }
+  };
+
+  document.getElementById("compareForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+    const statusMessage = document.getElementById("statusMessage");
+    const comparisonResultDiv = document.getElementById("comparison-result");
+    const downloadBtn = document.getElementById("downloadBtn");
+    const resultTable = document.getElementById("resultTable");
+    const thead = resultTable.querySelector("thead");
+    const tbody = resultTable.querySelector("tbody");
+
+    try {
+      const res = await fetch("/compare_excel", {
+        method: "POST",
+        body: formData
+      });
+
+      const result = await res.json();
+
+      if (res.ok && result.merged_data && result.merged_data.length > 0) {
+        statusMessage.textContent = '';
+        comparisonResultDiv.style.display = "block";
+        thead.innerHTML = '';
+        tbody.innerHTML = '';
+
+        const columns = Object.keys(result.merged_data[0]);
+
+        // Create header
+        thead.innerHTML = '<tr>' + columns.map(col => `<th>${col}</th>`).join('') + '</tr>';
+
+        // Add rows
+        result.merged_data.forEach(row => {
+          const tr = document.createElement("tr");
+
+          // Optional: highlight low match scores
+          if ('match_score' in row && row['match_score'] < 85) {
+            tr.style.backgroundColor = "#ffe0e0"; // Light red for low confidence
+          }
+
+          columns.forEach(col => {
+            const td = document.createElement("td");
+            td.innerText = row[col] !== null ? row[col] : '';
+            tr.appendChild(td);
+          });
+
+          tbody.appendChild(tr);
+        });
+
+        downloadedFilename = result.filename || 'merged_output.xlsx';
+        downloadBtn.style.display = 'inline-block';
+      } else {
+        statusMessage.textContent = result.error || "No matches found.";
+        comparisonResultDiv.style.display = "none";
+        downloadBtn.style.display = 'none';
+      }
+    } catch (err) {
+      statusMessage.textContent = "Request failed. Please try again.";
+      console.error(err);
+    }
+  });
+
+  function downloadFile() {
+    if (downloadedFilename) {
+      window.location.href = `/download_excel?filename=${encodeURIComponent(downloadedFilename)}`;
+    } else {
+      alert("No file available for download.");
+    }
+  }
+</script>
+
+</body>
+</html>
